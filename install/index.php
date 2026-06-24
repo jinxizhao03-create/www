@@ -1,54 +1,10 @@
 <?php
-if (file_exists(__DIR__ . '/../config/app.php')) {
-    $app = include __DIR__ . '/../config/app.php';
-    if (!empty($app['installed'])) {
-        die('系统已安装。');
-    }
-}
-$msg = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $db = array(
-        'host' => $_POST['db_host'],
-        'port' => $_POST['db_port'],
-        'name' => $_POST['db_name'],
-        'user' => $_POST['db_user'],
-        'pass' => $_POST['db_pass'],
-        'charset' => 'utf8'
-    );
-    $app = array(
-        'site_name' => $_POST['site_name'],
-        'site_url' => $_POST['site_url'],
-        'installed' => true,
-        'default_provider' => 'siliconflow'
-    );
-
-    try {
-        $dsn = 'mysql:host='.$db['host'].';port='.$db['port'].';dbname='.$db['name'].';charset=utf8';
-        $pdo = new PDO($dsn, $db['user'], $db['pass'], array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
-        $sql = file_get_contents(__DIR__ . '/schema.sql');
-        $pdo->exec($sql);
-        $hash = password_hash($_POST['admin_pass'], PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare('INSERT INTO admins(username,password,created_at) VALUES(?,?,NOW())');
-        $stmt->execute(array($_POST['admin_user'], $hash));
-
-        file_put_contents(__DIR__ . '/../config/db.php', "<?php\nreturn " . var_export($db, true) . ";\n");
-        file_put_contents(__DIR__ . '/../config/app.php', "<?php\nreturn " . var_export($app, true) . ";\n");
-        $msg = '安装成功，请删除install目录并访问前台。';
-    } catch (Exception $e) {
-        $msg = '安装失败：' . $e->getMessage();
-    }
-}
-?>
-<!doctype html><html><head><meta charset="utf-8"><title>安装向导</title></head>
-<body><h1>AI文章平台安装</h1><p><?php echo htmlspecialchars($msg); ?></p>
-<form method="post">
-站点名称<input name="site_name" required><br>
-站点URL<input name="site_url"><br>
-数据库主机<input name="db_host" value="127.0.0.1"><br>
-端口<input name="db_port" value="3306"><br>
-数据库名<input name="db_name" value="ai_writer"><br>
-数据库用户<input name="db_user" value="root"><br>
-数据库密码<input name="db_pass" type="password"><br>
-管理员账号<input name="admin_user" value="admin"><br>
-管理员密码<input name="admin_pass" type="password" required><br>
-<button type="submit">开始安装</button></form></body></html>
+$installed=false; if(file_exists(__DIR__.'/../config/app.php')){ $app=include __DIR__.'/../config/app.php'; $installed=!empty($app['installed']); }
+$checks=array(
+ array('PHP版本>=8.0', version_compare(PHP_VERSION,'8.0.0','>='), '请在护卫神主机大师中切换站点PHP版本到8.0。'),
+ array('curl扩展', extension_loaded('curl'), '启用php_curl扩展。'), array('gd扩展', extension_loaded('gd'), '启用php_gd扩展。'), array('pdo_mysql扩展', extension_loaded('pdo_mysql'), '启用php_pdo_mysql扩展。'), array('json扩展', extension_loaded('json'), '启用json扩展。'), array('openssl扩展', extension_loaded('openssl'), '启用openssl以加密API密钥。'),
+ array('config目录可写', is_writable(__DIR__.'/../config'), '给IIS_IUSRS写入config目录权限。'), array('内存限制建议>=128M', ((int)ini_get('memory_limit')>=128 || ini_get('memory_limit')==-1), 'php.ini memory_limit建议128M以上。')
+);
+$msg=''; if(!$installed && $_SERVER['REQUEST_METHOD']==='POST'){ try{ $db=array('host'=>$_POST['db_host'],'port'=>$_POST['db_port'],'name'=>$_POST['db_name'],'user'=>$_POST['db_user'],'pass'=>$_POST['db_pass'],'charset'=>'utf8'); $dsn='mysql:host='.$db['host'].';port='.$db['port'].';dbname='.$db['name'].';charset=utf8'; $pdo=new PDO($dsn,$db['user'],$db['pass'],array(PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION)); $pdo->exec(file_get_contents(__DIR__.'/schema.sql')); $hash=password_hash($_POST['admin_pass'],PASSWORD_DEFAULT); $pdo->prepare('INSERT INTO admins(username,password,role,created_at) VALUES(?,?,"super",NOW())')->execute(array($_POST['admin_user'],$hash)); $settings=array('site_name'=>$_POST['site_name'],'register_enabled'=>isset($_POST['register_enabled'])?'1':'0','icp'=>$_POST['icp'],'contact'=>$_POST['contact'],'compliance_text'=>$_POST['compliance_text']); foreach($settings as $k=>$v){$pdo->prepare('REPLACE INTO site_settings(name,value) VALUES(?,?)')->execute(array($k,$v));}
+$app=array('site_name'=>$_POST['site_name'],'site_url'=>$_POST['site_url'],'installed'=>true,'secret_key'=>bin2hex(random_bytes(24)),'register_enabled'=>isset($_POST['register_enabled'])); file_put_contents(__DIR__.'/../config/db.php',"<?php\nreturn ".var_export($db,true).";\n"); file_put_contents(__DIR__.'/../config/app.php',"<?php\nreturn ".var_export($app,true).";\n"); header('Location: /admin/login.php'); exit; }catch(Exception $e){ $msg='安装失败：'.$e->getMessage(); }}
+?><!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/assets/style.css"><title>安装向导</title></head><body><main><h1>Agnes多模态AI平台安装向导</h1><?php if($installed) die('<div class="card ok">系统已安装，请访问后台。</div>'); ?><div class="card"><h2>环境检测</h2><table><?php foreach($checks as $c){echo '<tr><td>'.htmlspecialchars($c[0]).'</td><td class="'.($c[1]?'ok':'bad').'">'.($c[1]?'通过':'未通过').'</td><td>'.htmlspecialchars($c[2]).'</td></tr>'; } ?></table><p>MySQL 5.7.44兼容性将在提交数据库信息后自动测试。IIS伪静态请使用根目录web.config。</p></div><p class="bad"><?php echo htmlspecialchars($msg); ?></p><form method="post" class="card"><h2>数据库与站点配置</h2><div class="grid"><label>站点名称<input name="site_name" value="Agnes多模态AI平台" required></label><label>站点URL<input name="site_url" placeholder="https://example.com"></label><label>备案号<input name="icp"></label><label>联系方式<input name="contact"></label><label>数据库主机<input name="db_host" value="127.0.0.1"></label><label>端口<input name="db_port" value="3306"></label><label>数据库名<input name="db_name" value="agnes_ai"></label><label>数据库用户<input name="db_user" value="root"></label><label>数据库密码<input name="db_pass" type="password"></label><label>管理员账号<input name="admin_user" value="admin"></label><label>管理员密码<input name="admin_pass" type="password" required></label></div><label><input type="checkbox" name="register_enabled" checked style="width:auto"> 开启前台注册</label><label>合规提示<textarea name="compliance_text">AI生成内容仅供参考，请勿生成违法违规内容。</textarea></label><button>测试连接并一键安装</button></form></main></body></html>

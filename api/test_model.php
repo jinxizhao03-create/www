@@ -1,0 +1,1 @@
+<?php session_start(); require __DIR__.'/../config/functions.php'; require_admin(); $type=isset($_GET['type'])?$_GET['type']:'chat'; $r=call_agnes($type,array('prompt'=>'ping','cost'=>0)); json_response($r); 

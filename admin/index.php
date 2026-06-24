@@ -1,2 +1,1 @@
-<?php session_start(); if(empty($_SESSION['admin'])){header('Location: login.php');exit;} ?>
-<h1>后台管理</h1><a href="prompts.php">指令词管理</a> | <a href="apis.php">API配置</a> | <a href="logout.php">退出</a>
+<?php require __DIR__.'/../config/functions.php'; require_admin(); page_header('后台管理'); ?><div class="card"><h1>后台管理</h1><a href="apis.php">模型API配置中心</a><a href="members.php">会员管理</a><a href="logs.php">调用日志</a><a href="settings.php">站点配置</a><a href="admins.php">管理员账号</a><a href="logout.php">退出</a></div><?php page_footer(); ?>

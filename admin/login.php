@@ -1,9 +1,1 @@
-<?php
-session_start();
-require __DIR__ . '/../config/functions.php';
-$msg='';
-if($_SERVER['REQUEST_METHOD']==='POST'){
-$db=get_db();$stmt=$db->prepare('SELECT * FROM admins WHERE username=?');$stmt->execute(array($_POST['username']));$u=$stmt->fetch(PDO::FETCH_ASSOC);
-if($u && password_verify($_POST['password'],$u['password'])){$_SESSION['admin']=$u['username'];header('Location: /admin/index.php');exit;} else $msg='登录失败';
-}
-?><h1>后台登录</h1><p><?php echo esc($msg);?></p><form method="post">账号<input name="username"><br>密码<input type="password" name="password"><br><button>登录</button></form>
+<?php session_start(); require __DIR__.'/../config/functions.php'; $msg=''; if($_SERVER['REQUEST_METHOD']==='POST'){ $db=get_db(); $st=$db->prepare('SELECT * FROM admins WHERE username=? AND status=1'); $st->execute(array($_POST['username'])); $u=$st->fetch(); if($u && password_verify($_POST['password'],$u['password'])){$_SESSION['admin_id']=$u['id'];$_SESSION['admin']=$u['username'];header('Location:/admin/index.php');exit;} $msg='登录失败'; } page_header('后台登录'); ?><form class="card" method="post"><h1>后台登录</h1><p class="bad"><?php echo esc($msg);?></p><input name="username" placeholder="账号"><input type="password" name="password" placeholder="密码"><button>登录</button></form><?php page_footer(); ?>

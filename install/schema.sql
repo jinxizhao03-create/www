@@ -1,36 +1,8 @@
-CREATE TABLE IF NOT EXISTS admins (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  username VARCHAR(50) UNIQUE,
-  password VARCHAR(255) NOT NULL,
-  created_at DATETIME
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS prompt_categories (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  type ENUM('generate','rewrite') NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  prompt TEXT NOT NULL,
-  created_at DATETIME
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS api_configs (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  provider VARCHAR(50) NOT NULL,
-  api_key VARCHAR(255) NOT NULL,
-  base_url VARCHAR(255) DEFAULT NULL,
-  is_default TINYINT(1) DEFAULT 0,
-  created_at DATETIME
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS rewrite_tasks (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(255),
-  category_id INT,
-  original_content MEDIUMTEXT,
-  rewritten_content MEDIUMTEXT,
-  status ENUM('pending','processing','done') DEFAULT 'pending',
-  origin_words INT DEFAULT 0,
-  rewritten_words INT DEFAULT 0,
-  created_at DATETIME,
-  updated_at DATETIME
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS admins (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, password VARCHAR(255) NOT NULL, role VARCHAR(30) DEFAULT 'super', status TINYINT(1) DEFAULT 1, created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS members (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(120) UNIQUE, phone VARCHAR(30) UNIQUE, password VARCHAR(255) NOT NULL, real_name VARCHAR(60), id_no VARCHAR(80), level VARCHAR(30) DEFAULT 'normal', credits INT DEFAULT 20, status TINYINT(1) DEFAULT 1, created_at DATETIME, updated_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS api_configs (id INT AUTO_INCREMENT PRIMARY KEY, model_type ENUM('chat','image','video') NOT NULL, model_name VARCHAR(80) NOT NULL, api_key TEXT NOT NULL, base_url VARCHAR(255) NOT NULL, enabled TINYINT(1) DEFAULT 1, created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS model_logs (id INT AUTO_INCREMENT PRIMARY KEY, member_id INT NULL, model_type VARCHAR(30), cost INT DEFAULT 0, status VARCHAR(30), result_excerpt TEXT, latency_ms INT DEFAULT 0, ip VARCHAR(64), created_at DATETIME, INDEX(member_id), INDEX(model_type), INDEX(created_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS conversations (id INT AUTO_INCREMENT PRIMARY KEY, member_id INT, title VARCHAR(255), messages MEDIUMTEXT, created_at DATETIME, updated_at DATETIME, INDEX(member_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS generations (id INT AUTO_INCREMENT PRIMARY KEY, member_id INT, model_type ENUM('image','video') NOT NULL, prompt TEXT, options TEXT, result_url VARCHAR(500), status VARCHAR(30) DEFAULT 'done', created_at DATETIME, INDEX(member_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS site_settings (name VARCHAR(80) PRIMARY KEY, value MEDIUMTEXT) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS admin_logs (id INT AUTO_INCREMENT PRIMARY KEY, admin_id INT, action VARCHAR(255), ip VARCHAR(64), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8;
